@@ -1,0 +1,11 @@
+streamlit==1.28.1
+pandas==2.1.3
+plotly==5.17.0
+openpyxl==3.1.2
+python-dateutil==2.8.2
+ofxparse==0.21
+flask==2.3.3
+flask-cors==4.0.0
+werkzeug==2.3.7
+requests==2.31.0
+gunicorn==21.2.0 

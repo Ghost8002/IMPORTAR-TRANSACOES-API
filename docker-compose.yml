@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  ofx-api:
+    build: .
+    ports:
+      - "5000:8080"
+    environment:
+      - FLASK_ENV=development
+      - PORT=8080
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    restart: unless-stopped
+    
+  # Opcional: Adicionar banco de dados se necessário
+  # redis:
+  #   image: redis:alpine
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+
+# volumes:
+#   redis_data: 

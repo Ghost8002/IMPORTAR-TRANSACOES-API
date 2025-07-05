@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Financeiro - Integração OFX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #5a6fd8;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #f0fff0;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .transactions-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .transactions-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .category-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .amount-positive {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .amount-negative {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Sistema Financeiro</h1>
+            <p>Importação e Gerenciamento de Transações OFX</p>
+        </div>
+
+        <div class="content">
+            <!-- Seção de Importação OFX -->
+            <div class="section">
+                <h2>📁 Importar Arquivo OFX</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <h3>Arraste e solte seu arquivo OFX aqui</h3>
+                    <p>ou clique para selecionar</p>
+                    <input type="file" id="fileInput" accept=".ofx" style="display: none;">
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        Selecionar Arquivo
+                    </button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processando arquivo OFX...</p>
+                </div>
+
+                <div id="status"></div>
+            </div>
+
+            <!-- Seção de Estatísticas -->
+            <div class="section hidden" id="statsSection">
+                <h2>📊 Estatísticas da Importação</h2>
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+
+            <!-- Seção de Transações -->
+            <div class="section hidden" id="transactionsSection">
+                <h2>📋 Transações Importadas</h2>
+                <div class="table-container">
+                    <table class="transactions-table" id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Seção de Dashboard -->
+            <div class="section">
+                <h2>📈 Dashboard</h2>
+                <button class="btn" onclick="loadDashboard()">Atualizar Dashboard</button>
+                <div class="stats-grid" id="dashboardGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir o cliente da API -->
+    <script src="api_client.js"></script>
+    
+    <script>
+        // Elementos do DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const loading = document.getElementById('loading');
+        const status = document.getElementById('status');
+        const statsSection = document.getElementById('statsSection');
+        const statsGrid = document.getElementById('statsGrid');
+        const transactionsSection = document.getElementById('transactionsSection');
+        const transactionsTable = document.getElementById('transactionsTable');
+        const transactionsBody = document.getElementById('transactionsBody');
+        const dashboardGrid = document.getElementById('dashboardGrid');
+
+        // Configurar drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Configurar input de arquivo
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Função para processar arquivo
+        async function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.ofx')) {
+                showStatus('Por favor, selecione um arquivo OFX válido.', 'error');
+                return;
+            }
+
+            showLoading(true);
+            showStatus('Iniciando processamento...', 'info');
+
+            try {
+                // Usar a função de importação da API
+                await importOFXFile(
+                    file,
+                    (result) => {
+                        showLoading(false);
+                        showStatus(result.message, 'success');
+                        displayStatistics(result.statistics);
+                        displayTransactions(result.transactions);
+                    },
+                    (error) => {
+                        showLoading(false);
+                        showStatus(`Erro: ${error}`, 'error');
+                    }
+                );
+            } catch (error) {
+                showLoading(false);
+                showStatus(`Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        // Função para mostrar loading
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        // Função para mostrar status
+        function showStatus(message, type) {
+            status.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Função para exibir estatísticas
+        function displayStatistics(stats) {
+            statsSection.classList.remove('hidden');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total_transactions}</div>
+                    <div class="stat-label">Total de Transações</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value amount-positive">R$ ${stats.total_receitas.toFixed(2)}</div>
+                    <div class="stat-label">Total Receitas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value amount-negative">R$ ${stats.total_despesas.toFixed(2)}</div>
+                    <div class="stat-label">Total Despesas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">R$ ${stats.saldo.toFixed(2)}</div>
+                    <div class="stat-label">Saldo</div>
+                </div>
+            `;
+        }
+
+        // Função para exibir transações
+        function displayTransactions(transactions) {
+            transactionsSection.classList.remove('hidden');
+            transactionsBody.innerHTML = '';
+
+            transactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(transaction.data)}</td>
+                    <td>${transaction.descricao}</td>
+                    <td class="${transaction.valor > 0 ? 'amount-positive' : 'amount-negative'}">
+                        R$ ${Math.abs(transaction.valor).toFixed(2)}
+                    </td>
+                    <td><span class="category-badge">${transaction.categoria}</span></td>
+                    <td>${transaction.tipo}</td>
+                `;
+                transactionsBody.appendChild(row);
+            });
+        }
+
+        // Função para carregar dashboard
+        async function loadDashboard() {
+            try {
+                await getDashboardData(
+                    (data) => {
+                        dashboardGrid.innerHTML = `
+                            <div class="stat-card">
+                                <div class="stat-value">R$ ${data.current_balance.toFixed(2)}</div>
+                                <div class="stat-label">Saldo Atual</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">R$ ${data.monthly_income.toFixed(2)}</div>
+                                <div class="stat-label">Receitas do Mês</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">R$ ${data.monthly_expenses.toFixed(2)}</div>
+                                <div class="stat-label">Despesas do Mês</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${data.total_transactions}</div>
+                                <div class="stat-label">Total Transações</div>
+                            </div>
+                        `;
+                    },
+                    (error) => {
+                        showStatus(`Erro ao carregar dashboard: ${error}`, 'error');
+                    }
+                );
+            } catch (error) {
+                showStatus(`Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        // Função para formatar data
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Carregar dashboard ao iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+    </script>
+</body>
+</html> 
