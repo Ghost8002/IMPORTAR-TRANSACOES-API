@@ -6,7 +6,7 @@
  */
 
 class OFXApiClient {
-    constructor(baseUrl = 'http://localhost:5000') {
+    constructor(baseUrl = 'https://importar-transacoes-api.onrender.com') {
         this.baseUrl = baseUrl;
     }
 
